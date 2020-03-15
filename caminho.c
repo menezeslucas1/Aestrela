@@ -35,7 +35,7 @@ Cidade * procura(char *nome, Cidade *cidade, int qtd);
 void leNome(FILE *arquivo, char *nome);
 void leMapa(FILE *arquivo, Cidade *mapa, int qtd);
 void remover1(Lista **borda);
-void expandir(Lista **borda, Cidade **cidade, int *distancia);
+void expandir(Lista **borda);
 void adicionar(Lista **inicio, Etapa *etapa);
 void menorCaminho(char *nomeOrigem, Cidade *mapa, int qtd);
 
@@ -152,13 +152,16 @@ void remover1(Lista **borda)
 	*borda = (*borda)->proximo;
 }
 
-void expandir(Lista **borda, Cidade **cidade, int *distancia)
+//void expandir(Lista **borda, Cidade **cidade, int *distancia)
+void expandir(Lista **borda)
 {
 	int i=0;
 	int g = (**borda).etapa->g;
 //	int h = borda->etapa->h;
 	Etapa *etapa;
 	Etapa *anterior = (**borda).etapa;
+	Cidade **cidade = (**borda).etapa->cidade->vizinha;
+	int *distancia = (**borda).etapa->cidade->distancia;
 	remover1(borda);
 	while (cidade[i]!=NULL)
 	{
@@ -167,7 +170,9 @@ void expandir(Lista **borda, Cidade **cidade, int *distancia)
 		etapa->anterior = anterior;
 		etapa->g = g+distancia[i];
 		etapa->h = cidade[i]->distanciaDestino;
+//		printf("%s\t%d %d %d\n", cidade[i]->nome, etapa->g + etapa->h, etapa->g, etapa->h);
 		adicionar(borda, etapa);
+		i++;
 	}
 }
 
@@ -175,7 +180,6 @@ void adicionar(Lista **inicio, Etapa *etapa)
 {
 	if (*inicio==NULL)
 	{
-		printf("nulo\n");
 		*inicio = (Lista *)malloc(sizeof(Lista));
 		(**inicio).etapa = etapa;
 		(**inicio).proximo = NULL;
@@ -183,6 +187,7 @@ void adicionar(Lista **inicio, Etapa *etapa)
 	}
 	int fnovo = etapa->g + etapa->h;
 	int fantigo = (**inicio).etapa->g + (**inicio).etapa->h;
+//	printf("%d %d\n", fnovo, fantigo);
 	if (fnovo <= fantigo)
 	{
 		Lista *novo = (Lista *)malloc(sizeof(Lista));
@@ -201,24 +206,20 @@ void menorCaminho(char *nomeOrigem, Cidade *mapa, int qtd)
 	Lista *borda;
 	borda=NULL;
 
-//	if(borda==NULL)
-//		printf("nulo1\n");
-
 	adicionar(&borda, &inicial);
-//	printf("asdf\n");
 
-//	if(borda==NULL)
-//		printf("nulo2\n");
-
+//	printf("%s %d\n",borda->etapa->cidade->nome, borda->etapa->g);
 	int i=0;
 	while (borda->etapa->cidade->distanciaDestino != 0)
 	{
-		expandir(&borda, origem->vizinha, origem->distancia);
-		if(++i >= 100)
+		expandir(&borda);
+//	printf("%s %d\n",borda->etapa->cidade->nome, borda->etapa->g);
+		if(++i >= 10)
 			break;
 	}
 	Etapa *e;
 	e = borda->etapa;
+	printf("\nSolução:\n\n");
 	do
 	{
 		printf("%s\n",e->cidade->nome);
@@ -226,8 +227,13 @@ void menorCaminho(char *nomeOrigem, Cidade *mapa, int qtd)
 	}while(e!=NULL);
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+	if (argc!=2)
+	{
+		printf("modo de usar: $./caminho <nome da cidade>\n");
+		return 2;
+	}
 	FILE *distancia = fopen("distancia.txt", "r");
 	if (distancia == NULL)
 	{
@@ -244,7 +250,7 @@ int main()
 		return 1;
 	}
 	leMapa(mapa, cidade, qtdCidade);
-	menorCaminho("Lugoj", cidade, qtdCidade);
+	menorCaminho(argv[1], cidade, qtdCidade);
 	printf("Sucesso.\n");
 	return 0;
 }
